@@ -1,0 +1,148 @@
+{
+  "manifest_version": 3,
+  "name": "Video Saver",
+  "version": "3.3.0",
+  "description": "Download videos from YouTube, Reddit, Facebook, Instagram, X, Vimeo, TikTok, Twitch and Dailymotion. No companion app needed.",
+  "permissions": [
+    "activeTab",
+    "downloads",
+    "scripting",
+    "tabs",
+    "storage",
+    "webRequest",
+    "webNavigation"
+  ],
+  "host_permissions": [
+    "*://*.youtube.com/*",
+    "*://*.youtu.be/*",
+    "*://*.googlevideo.com/*",
+    "*://*.reddit.com/*",
+    "*://v.redd.it/*",
+    "*://*.redd.it/*",
+    "*://*.redditmedia.com/*",
+    "*://*.facebook.com/*",
+    "*://*.fb.watch/*",
+    "*://*.fbcdn.net/*",
+    "*://*.facebook.net/*",
+    "*://*.instagram.com/*",
+    "*://*.cdninstagram.com/*",
+    "*://*.twitter.com/*",
+    "*://*.x.com/*",
+    "*://*.t.co/*",
+    "*://*.twimg.com/*",
+    "*://*.vimeo.com/*",
+    "*://*.vimeocdn.com/*",
+    "*://*.tiktok.com/*",
+    "*://*.tiktokcdn.com/*",
+    "*://*.twitch.tv/*",
+    "*://*.twitchsvc.net/*",
+    "*://*.jtvnw.net/*",
+    "*://*.dailymotion.com/*",
+    "*://*.dmcdn.net/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Video Saver"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://*.youtu.be/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://*.reddit.com/*"
+      ],
+      "js": [
+        "reddit-content.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://*.facebook.com/*",
+        "*://*.fb.watch/*"
+      ],
+      "js": [
+        "facebook-content.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://*.instagram.com/*"
+      ],
+      "js": [
+        "instagram-content.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://*.twitter.com/*",
+        "*://*.x.com/*"
+      ],
+      "js": [
+        "x-content.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://*.vimeo.com/*",
+        "*://player.vimeo.com/*",
+        "*://*.tiktok.com/*",
+        "*://*.twitch.tv/*",
+        "*://clips.twitch.tv/*",
+        "*://*.dailymotion.com/*"
+      ],
+      "js": [
+        "generic-content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "yt_solver_lib_min.js",
+        "yt_solver_core_min.js",
+        "yt-decipher.js",
+        "sandbox-bootstrap.js",
+        "sandbox.js",
+        "sandbox.html",
+        "page-bridge.js",
+        "mp4box_all_min.js",
+        "muxer.js",
+        "solver-worker.js",
+        "merge.js",
+        "facebook-content.js",
+        "instagram-content.js",
+        "generic-content.js",
+        "network-interceptor.js",
+        "x-content.js",
+        "x-response-interceptor.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "sandbox": {
+    "pages": [
+      "sandbox.html"
+    ]
+  }
+}

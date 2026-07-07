@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Video Saver</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-top: #06152f;
+      --bg-bottom: #020812;
+      --panel: linear-gradient(180deg, rgba(10,28,68,0.98), rgba(4,16,42,0.98));
+      --panel-border: rgba(95,131,206,0.18);
+      --panel-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 10px 24px rgba(0,0,0,0.28);
+      --gold: #f6c343;
+      --gold-dark: #e5b632;
+      --reddit-orange: #ff4500;
+      --text: #eef3fb;
+      --muted: #b7c3da;
+      --subtle: #8ea4cf;
+      --secondary: linear-gradient(180deg, rgba(28,42,72,0.96), rgba(17,28,50,0.98));
+      --secondary-border: rgba(255,255,255,0.07);
+    }
+
+    body {
+      width: 360px;
+      max-height: 520px;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+      color: var(--text);
+      font-size: 13px;
+      padding: 10px;
+    }
+
+    .shell { display: flex; flex-direction: column; gap: 8px; }
+
+    /* ── Header ── */
+    .header { padding: 8px 10px 2px; text-align: center; }
+    .header h1 { font-size: 14px; font-weight: 800; color: var(--gold); letter-spacing: -0.01em; }
+    .header p  { margin-top: 4px; font-size: 10px; color: var(--muted); opacity: 0.78; }
+
+    /* Site pill badge */
+    .site-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      margin-top: 5px;
+    }
+    .site-badge.yt     { background: rgba(255,0,0,0.15);    color: #ff6b6b; border: 1px solid rgba(255,60,60,0.3);     }
+    .site-badge.reddit { background: rgba(255,69,0,0.15);   color: #ff7b55; border: 1px solid rgba(255,80,20,0.35);    }
+    .site-badge.fb     { background: rgba(24,119,242,0.15); color: #5b9ef6; border: 1px solid rgba(24,119,242,0.35);   }
+    .site-badge.ig     { background: rgba(193,53,132,0.15);  color: #e070b8; border: 1px solid rgba(193,53,132,0.35);  }
+    .site-badge.x      { background: rgba(0,0,0,0.35);       color: #aaa;    border: 1px solid rgba(255,255,255,0.15); }
+    .site-badge.vimeo  { background: rgba(26,183,234,0.15);  color: #5dd4f0; border: 1px solid rgba(26,183,234,0.35); }
+    .site-badge.tiktok { background: rgba(1,1,1,0.35);       color: #aaa;    border: 1px solid rgba(255,255,255,0.12);}
+    .site-badge.twitch { background: rgba(145,70,255,0.18);  color: #c39fff; border: 1px solid rgba(145,70,255,0.4);  }
+    .site-badge.dm     { background: rgba(0,102,220,0.15);   color: #6ab0ff; border: 1px solid rgba(0,102,220,0.35); }
+    .btn-generic { background: linear-gradient(180deg, #3a4a6b, #263050); color: #d0deff; border: 1px solid rgba(120,150,220,0.3); box-shadow: 0 8px 16px rgba(0,0,0,0.2); }
+    .btn-generic:hover { background: linear-gradient(180deg, #4a5a7e, #303d60); transform: translateY(-1px); }
+
+    /* ── Panel ── */
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 18px;
+      box-shadow: var(--panel-shadow);
+    }
+
+    /* ── Shared preview area ── */
+    .preview-panel { padding: 8px; }
+
+    .video-thumb {
+      display: block;
+      width: 100%;
+      height: 110px;
+      object-fit: cover;
+      border-radius: 12px;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .video-meta  { margin-top: 8px; }
+    .video-title { font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.3;
+                   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-align: center; }
+    .video-channel { margin-top: 3px; font-size: 10px; color: var(--muted); text-align: center; }
+    .video-badges { display: flex; justify-content: center; gap: 5px; margin-top: 6px; flex-wrap: wrap; }
+    .badge { font-size: 9px; padding: 2px 7px; border-radius: 999px; font-weight: 700; }
+    .badge-live     { background: rgba(222,54,72,0.95); color: white; }
+    .badge-shorts   { background: rgba(255,86,86,0.92); color: white; }
+    .badge-duration { background: rgba(255,255,255,0.08); color: var(--muted); border: 1px solid rgba(255,255,255,0.07); }
+
+    /* ── No-video placeholder ── */
+    .no-video { padding: 18px 14px; text-align: center; color: var(--muted); display: none; }
+    .no-video.visible { display: block; }
+    .no-video svg { width: 36px; height: 36px; margin-bottom: 8px; opacity: 0.45; color: #d7e0f7; }
+    .no-video p { font-size: 11px; line-height: 1.4; }
+
+    /* ── Settings cards ── */
+    .settings-card { padding: 8px; }
+    .settings-stack { display: flex; flex-direction: column; gap: 8px; }
+    .section { padding: 6px 8px; border: 0; background: transparent; }
+    .section-title { font-size: 10px; font-weight: 700; color: var(--subtle); text-transform: uppercase;
+                     letter-spacing: 0.08em; margin-bottom: 6px; text-align: center; }
+
+    /* Format grid (YouTube) */
+    .format-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+    .format-btn, .quality-chip, .btn-secondary {
+      background: var(--secondary);
+      border: 1px solid var(--secondary-border);
+      color: var(--text);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    .format-btn { border-radius: 12px; padding: 8px 9px; cursor: pointer; transition: all 0.15s ease; text-align: left; }
+    .format-btn:hover, .quality-chip:hover, .btn-secondary:hover { transform: translateY(-1px); border-color: rgba(245,193,61,0.35); }
+    .format-btn.active { border-color: rgba(245,193,61,0.65); background: linear-gradient(180deg, rgba(63,77,120,0.95), rgba(24,33,60,0.98)); }
+    .format-btn-label { font-size: 11px; font-weight: 700; display: block; }
+    .format-btn-sub   { font-size: 9px; color: var(--muted); margin-top: 2px; display: block; line-height: 1.25; }
+
+    /* Quality chips (YouTube) */
+    .quality-row { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
+    .quality-chip { border-radius: 999px; padding: 3px 6px; font-size: 10px; cursor: pointer; transition: all 0.12s ease; min-width: 44px; }
+    .quality-chip.active { background: linear-gradient(180deg, rgba(245,193,61,0.22), rgba(170,119,9,0.15)); border-color: rgba(245,193,61,0.78); color: #ffe29b; }
+
+    /* Reddit URL rows */
+    .url-row { font-size: 10px; color: var(--muted); padding: 4px 6px; background: rgba(255,255,255,0.04);
+               border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; word-break: break-all; line-height: 1.4; }
+    .url-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--subtle); margin-bottom: 3px; }
+    .url-ok  { color: #86efac; }
+    .url-bad { color: #fca5a5; }
+
+    /* Reddit direct MP4 select */
+    .reddit-select {
+      width: 100%;
+      padding: 7px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(245,193,61,0.3);
+      background: rgba(14,28,56,0.96);
+      color: var(--text);
+      font-size: 11px;
+      outline: none;
+      appearance: none;
+    }
+    .reddit-select option { background: #12213f; color: #f3f6ff; }
+
+    /* ── Actions ── */
+    .actions { padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+    .btn { width: 100%; padding: 8px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer;
+           border: none; transition: all 0.15s ease; display: flex; align-items: center; justify-content: center;
+           gap: 6px; letter-spacing: 0.01em; }
+    .btn-primary { background: #f6c343; color: #000; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 8px 16px rgba(0,0,0,0.22); }
+    .btn-primary:hover  { background: #e5b632; transform: translateY(-1px); }
+    .btn-primary:disabled { background: linear-gradient(180deg, #76643a 0%, #60512e 100%); color: rgba(255,255,255,0.5); cursor: not-allowed; transform: none; }
+    .btn-reddit { background: linear-gradient(180deg, #ff5722, #e64000); color: white; box-shadow: 0 8px 16px rgba(255,69,0,0.22); }
+    .btn-reddit:hover { background: linear-gradient(180deg, #ff6a35, #ff4500); transform: translateY(-1px); }
+    .btn-fb { background: linear-gradient(180deg, #2d7ff9, #1877f2); color: white; box-shadow: 0 8px 16px rgba(24,119,242,0.25); }
+    .btn-fb:hover { background: linear-gradient(180deg, #3d8fff, #1f7af5); transform: translateY(-1px); }
+    .btn-ig { background: linear-gradient(180deg, #d63084, #c13584); color: white; box-shadow: 0 8px 16px rgba(193,53,132,0.25); }
+    .btn-ig:hover { background: linear-gradient(180deg, #e0409a, #d0408e); transform: translateY(-1px); }
+    .btn-secondary { background: #16243a; border: 1px solid #243a5a; color: #d0d7e2; }
+
+    .spinner { width: 13px; height: 13px; border: 2px solid rgba(15,17,22,0.25); border-top-color: #0f1116;
+               border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Status bar ── */
+    .status-bar { display: none; padding: 8px 12px; font-size: 11px; line-height: 1.35; border-radius: 14px;
+                  border: 1px solid transparent; text-align: center; }
+    .status-bar.visible { display: block; }
+    .status-bar.info    { background: rgba(49,96,177,0.18);  color: #b9d2ff; border-color: rgba(110,156,236,0.18); }
+    .status-bar.success { background: rgba(56,137,76,0.16);  color: #b5efbf; border-color: rgba(113,198,133,0.2); }
+    .status-bar.error   { background: rgba(143,49,60,0.16);  color: #ffb8be; border-color: rgba(226,103,120,0.2); }
+
+    .mux-progress { display: none; font-size: 10px; color: var(--muted); padding: 2px 4px; text-align: center; }
+
+    /* ── Footer ── */
+    .footer { text-align: center; font-size: 10px; opacity: 0.6; padding: 2px 0 0; color: rgba(207,218,245,0.72); }
+    .footer strong { color: var(--gold); font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+
+    <!-- Header -->
+    <div class="header">
+      <h1>Video Saver</h1>
+      <p>Save videos from YouTube and Reddit</p>
+      <div id="siteBadge" class="site-badge" style="display:none"></div>
+    </div>
+
+    <!-- Preview panel (shared) -->
+    <div class="panel preview-panel">
+      <div id="videoInfo" style="display:none">
+        <img class="video-thumb" id="videoThumb" alt="Thumbnail" />
+        <div class="video-meta">
+          <div class="video-title"   id="videoTitle"></div>
+          <div class="video-channel" id="videoChannel"></div>
+          <div class="video-badges"  id="videoBadges"></div>
+        </div>
+      </div>
+
+      <div class="no-video visible" id="noVideo">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M10 8L16 12L10 16V8ZM21 6.5V17.5C21 18.33 20.33 19 19.5 19H4.5C3.67 19 3 18.33 3 17.5V6.5C3 5.67 3.67 5 4.5 5H19.5C20.33 5 21 5.67 21 6.5Z"/>
+        </svg>
+        <p id="noVideoMsg">Open a video page, then reopen the extension.</p>
+        <p style="margin-top:6px;color:#9bb0d8;" id="noVideoHint"></p>
+      </div>
+    </div>
+
+    <!-- ── YouTube settings panel ── -->
+    <div class="panel settings-card" id="ytSettings" style="display:none">
+      <div class="settings-stack">
+        <div class="section" id="formatSection">
+          <div class="section-title">Format</div>
+          <div class="format-grid">
+            <button class="format-btn active" data-format="best">
+              <span class="format-btn-label">Full video</span>
+              <span class="format-btn-sub">Video + audio (MP4/MKV)</span>
+            </button>
+            <button class="format-btn" data-format="audio">
+              <span class="format-btn-label">Audio only</span>
+              <span class="format-btn-sub">Direct save when possible</span>
+            </button>
+          </div>
+        </div>
+        <div class="section" id="qualitySection">
+          <div class="section-title">Video quality</div>
+          <div class="quality-row">
+            <button class="quality-chip" data-quality="best">Max</button>
+            <button class="quality-chip" data-quality="2160">4K</button>
+            <button class="quality-chip" data-quality="1440">1440p</button>
+            <button class="quality-chip active" data-quality="1080">1080p</button>
+            <button class="quality-chip" data-quality="720">720p</button>
+            <button class="quality-chip" data-quality="480">480p</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Reddit info panel ── -->
+    <div class="panel settings-card" id="redditInfo" style="display:none">
+      <div class="settings-stack">
+        <div class="section">
+          <div class="section-title">Detected Streams</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div>
+              <div class="url-label"><span id="videoStatus" class="url-bad">✗</span> Video</div>
+              <div class="url-row" id="redditVideoUrl">Not detected yet</div>
+            </div>
+            <div>
+              <div class="url-label"><span id="audioStatus" class="url-bad">✗</span> Audio</div>
+              <div class="url-row" id="redditAudioUrl">Not detected yet</div>
+            </div>
+          </div>
+        </div>
+        <div class="section" id="directMp4Section" style="display:none">
+          <div class="section-title">Direct MP4</div>
+          <select class="reddit-select" id="directMp4Select">
+            <option value="">No direct MP4 detected</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status bar (shared) -->
+    <div class="status-bar" id="statusBar"></div>
+
+    <!-- ── YouTube actions ── -->
+    <div class="panel actions" id="ytActions" style="display:none">
+      <button class="btn btn-primary" id="btnMux">
+        <span class="spinner" id="muxSpinner" style="display:none"></span>
+        <span id="muxBtnText">Download</span>
+      </button>
+      <div class="mux-progress" id="muxProgress"></div>
+      <button class="btn btn-secondary" id="btnAbort"   style="display:none;color:#ffb1b1;border-color:rgba(255,120,120,0.18)">Abort</button>
+      <button class="btn btn-secondary" id="btnYtOpen">Open Video Page</button>
+    </div>
+
+    <!-- ── Reddit actions ── -->
+    <div class="panel actions" id="redditActions" style="display:none">
+      <button class="btn btn-reddit"    id="btnRedditMerge">Merge &amp; Download MP4</button>
+      <button class="btn btn-secondary" id="btnRedditVideo">Download Video Only</button>
+      <button class="btn btn-secondary" id="btnRedditAudio">Download Audio Only</button>
+      <button class="btn btn-secondary" id="btnRedditDirect" style="display:none">Download Direct MP4</button>
+      <button class="btn btn-secondary" id="btnRedditRefresh">↺ Refresh</button>
+    </div>
+
+    <!-- ── Facebook info panel ── -->
+    <div class="panel settings-card" id="fbInfo" style="display:none">
+      <div class="settings-stack">
+        <div class="section">
+          <div class="section-title">Detected Streams</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div>
+              <div class="url-label"><span id="fbHdStatus" class="url-bad">✗</span> HD Video</div>
+              <div class="url-row" id="fbHdUrlRow">Not detected yet</div>
+            </div>
+            <div>
+              <div class="url-label"><span id="fbSdStatus" class="url-bad">✗</span> SD Video</div>
+              <div class="url-row" id="fbSdUrlRow">Not detected yet</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Facebook actions ── -->
+    <div class="panel actions" id="fbActions" style="display:none">
+      <button class="btn btn-fb"        id="btnFbBest" style="display:none">⬇ Download Best Quality</button>
+      <button class="btn btn-secondary" id="btnFbHd"   style="display:none">Download HD</button>
+      <button class="btn btn-secondary" id="btnFbSd"   style="display:none">Download SD</button>
+      <button class="btn btn-secondary" id="btnFbRefresh">↺ Refresh</button>
+    </div>
+
+    <!-- ── Instagram info panel ── -->
+    <div class="panel settings-card" id="igInfo" style="display:none">
+      <div class="settings-stack">
+        <div class="section">
+          <div class="section-title">Detected Streams</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div>
+              <div class="url-label"><span id="igHdStatus" class="url-bad">✗</span> HD Video</div>
+              <div class="url-row" id="igHdUrlRow">Not detected yet</div>
+            </div>
+            <div>
+              <div class="url-label"><span id="igSdStatus" class="url-bad">✗</span> SD Video</div>
+              <div class="url-row" id="igSdUrlRow">Not detected yet</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Instagram actions ── -->
+    <div class="panel actions" id="igActions" style="display:none">
+      <button class="btn btn-ig"        id="btnIgBest" style="display:none">⬇ Download Best Quality</button>
+      <button class="btn btn-secondary" id="btnIgHd"   style="display:none">Download HD</button>
+      <button class="btn btn-secondary" id="btnIgSd"   style="display:none">Download SD</button>
+      <button class="btn btn-secondary" id="btnIgRefresh">↺ Refresh</button>
+    </div>
+
+    <!-- ── Generic platform info panel (X, Vimeo, TikTok, Twitch, Dailymotion) ── -->
+    <div class="panel settings-card" id="genericInfo" style="display:none">
+      <div class="settings-stack">
+        <div class="section">
+          <div class="section-title">Detected Streams</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div>
+              <div class="url-label"><span id="genericHdStatus" class="url-bad">✗</span> HD / Best</div>
+              <div class="url-row" id="genericHdUrlRow">Not detected yet</div>
+            </div>
+            <div>
+              <div class="url-label"><span id="genericSdStatus" class="url-bad">✗</span> SD / Alt</div>
+              <div class="url-row" id="genericSdUrlRow">Not detected yet</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Generic platform actions ── -->
+    <div class="panel actions" id="genericActions" style="display:none">
+      <button class="btn btn-generic"   id="btnGenericBest" style="display:none">⬇ Download Best Quality</button>
+      <button class="btn btn-secondary" id="btnGenericHd"   style="display:none">Download HD</button>
+      <button class="btn btn-secondary" id="btnGenericSd"   style="display:none">Download SD / Alt</button>
+      <button class="btn btn-secondary" id="btnGenericRefresh">↺ Refresh</button>
+    </div>
+
+    <div class="footer">Created by <strong>SchultzByte</strong></div>
+  </div>
+
+  <script src="merge.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
